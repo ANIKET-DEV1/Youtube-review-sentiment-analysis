@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Comment Sentiment Analyzer | MLOps</title>
+  <meta name="description" content="Extract and analyze YouTube video comments sentiment (positive, negative, neutral) in real-time.">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+        </svg>
+      </div>
+      <span class="brand-title">YT Sentiment MLOps</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/docs" target="_blank" class="nav-link">API Docs</a>
+      <a href="/health" target="_blank" class="nav-link">Health Check</a>
+    </nav>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+    
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1 class="hero-title">YouTube Comment <span>Sentiment Analyzer</span></h1>
+      <p class="hero-subtitle">
+        Scrape top video comments in seconds and run real-time Machine Learning sentiment classification (Positive, Negative, Neutral).
+      </p>
+    </section>
+
+    <!-- Search Form Card -->
+    <section class="glass-card">
+      <form id="analyzerForm" class="search-box">
+        <div class="input-group">
+          <div class="input-wrapper">
+            <span class="input-icon">🔍</span>
+            <input 
+              type="text" 
+              id="youtubeUrl" 
+              class="url-input" 
+              placeholder="Paste YouTube Video URL (e.g. https://www.youtube.com/watch?v=...)"
+              required
+            />
+          </div>
+          <button type="submit" id="submitBtn" class="btn-primary">
+            <span id="btnText">Analyze Video</span>
+            <div id="btnSpinner" class="spinner hidden"></div>
+          </button>
+        </div>
+
+        <div class="options-row">
+          <div class="comments-count-select">
+            <label for="maxComments">Comments to Scrape:</label>
+            <select id="maxComments" class="select-dropdown">
+              <option value="10">Top 10 Comments</option>
+              <option value="25" selected>Top 25 Comments</option>
+              <option value="50">Top 50 Comments</option>
+            </select>
+          </div>
+          <button type="button" id="demoBtn" class="filter-btn">Try Demo URL</button>
+        </div>
+      </form>
+
+      <!-- Error Banner -->
+      <div id="errorBanner" class="error-banner hidden">
+        <span>⚠️</span>
+        <span id="errorMessage">An error occurred while fetching comments.</span>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="resultsSection" class="results-section hidden">
+      
+      <!-- Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="metric-label">Analyzed Comments</span>
+          <span id="totalCommentsVal" class="metric-value">0</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Overall Video Sentiment</span>
+          <div id="overallBadge" class="badge-overall badge-positive">
+            <span id="overallBadgeText">Positive</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Positive Sentiment</span>
+          <span id="posPercentVal" class="metric-value" style="color: var(--color-positive)">0%</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Negative Sentiment</span>
+          <span id="negPercentVal" class="metric-value" style="color: var(--color-negative)">0%</span>
+        </div>
+      </div>
+
+      <!-- Distribution Bars -->
+      <div class="distribution-card">
+        <h3 style="font-size: 1.1rem; font-weight: 600;">Sentiment Breakdown</h3>
+
+        <div class="dist-item">
+          <div class="dist-header">
+            <span>Positive</span>
+            <span id="posCountText">0 comments (0%)</span>
+          </div>
+          <div class="dist-bar-bg">
+            <div id="posBar" class="dist-bar-fill fill-positive" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="dist-item">
+          <div class="dist-header">
+            <span>Negative</span>
+            <span id="negCountText">0 comments (0%)</span>
+          </div>
+          <div class="dist-bar-bg">
+            <div id="negBar" class="dist-bar-fill fill-negative" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="dist-item">
+          <div class="dist-header">
+            <span>Neutral</span>
+            <span id="neuCountText">0 comments (0%)</span>
+          </div>
+          <div class="dist-bar-bg">
+            <div id="neuBar" class="dist-bar-fill fill-neutral" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comments Section -->
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="comments-header">
+          <h3 style="font-size: 1.2rem; font-weight: 600;">Scraped Comments & Predictions</h3>
+          <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="positive">Positive</button>
+            <button class="filter-btn" data-filter="negative">Negative</button>
+            <button class="filter-btn" data-filter="neutral">Neutral</button>
+          </div>
+        </div>
+
+        <div id="commentsList" class="comments-list">
+          <!-- Dynamically populated comment cards -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>YT Sentiment MLOps Pipeline &bull; Powered by FastAPI, Scikit-Learn, and YouTube Scraper</p>
+  </footer>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

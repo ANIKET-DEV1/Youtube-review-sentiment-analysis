@@ -3,10 +3,17 @@ import os
 import sys
 import joblib
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
 
 def evaluate():
-    model_path = "yt-sentiment-mlops/models/sentiment_model.pkl"
-    benchmark_path = "yt-sentiment-mlops/ml/benchmark.json"
+    model_path = os.path.join(BASE_DIR, "models", "sentiment_model.pkl")
+    if not os.path.exists(model_path):
+        model_path = "models/sentiment_model.pkl"
+
+    benchmark_path = os.path.join(BASE_DIR, "ml", "benchmark.json")
+    if not os.path.exists(benchmark_path):
+        benchmark_path = "ml/benchmark.json"
 
     if not os.path.exists(model_path):
         print(f"Error: Model file not found at {model_path}")
@@ -47,7 +54,6 @@ def evaluate():
 
         print(f"[{status}] Comment: \"{text}\" | Expected: {expected} | Predicted: {prediction}")
 
-    # 4. Compute Accuracy Metric
     accuracy = correct / total if total > 0 else 0.0
     print("\n-----------------------------------")
     print(f"Benchmark Accuracy: {accuracy * 100:.2f}% ({correct}/{total})")
