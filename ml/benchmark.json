@@ -1,5 +1,14 @@
-{
-  "accuracy": 0.0,
-  "f1_score": 0.0,
-  "last_updated": "2026-09-27"
-}
+[
+  {
+    "comment": "Honestly, This is one of the weakest videos on this topic.",
+    "sentiment": "negative"
+  },
+  {
+    "comment": "Great video, extremely clear explanation!",
+    "sentiment": "positive"
+  },
+  {
+    "comment": "It was an average overview of the topic.",
+    "sentiment": "neutral"
+  }
+]
