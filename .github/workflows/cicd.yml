@@ -7,81 +7,84 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0' # Retrain model automatically every Sunday midnight
+    - cron: '0 0 * * 0'
 
 jobs:
   train-eval-test:
-    name:  Retrain, Evaluate & Test Model
+    name: Retrain Evaluate and Test Model
     runs-on: ubuntu-latest
 
     steps:
-      - name:  Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name:  Set up Python 3.10
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
           cache: 'pip'
 
-      - name:  Install Dependencies
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name:  Retrain Model (Dataset + Feedback DB)
+      - name: Retrain Model (Dataset + Feedback DB)
         run: |
           python ml/train.py
 
-      - name:  Evaluate Model Performance Gate
+      - name: Evaluate Model Performance Gate
         run: |
           python ml/evaluate.py
 
-      - name:  Run Unit & API Tests
+      - name: Run Unit and API Tests
         run: |
           pytest -v
 
-      - name:  Upload Trained Model Artifact
+      - name: Upload Trained Model Artifact
         uses: actions/upload-artifact@v4
         with:
           name: sentiment-model-artifact
           path: models/sentiment_model.pkl
 
   docker-build-test:
-    name: Build & Test Docker Image
+    name: Build and Test Docker Image
     needs: train-eval-test
     runs-on: ubuntu-latest
+    env:
+      DOCKER_USER: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
 
     steps:
-      - name:  Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name:  Download Model Artifact
+      - name: Download Model Artifact
         uses: actions/download-artifact@v4
         with:
           name: sentiment-model-artifact
           path: models/
 
-      - name:  Build Docker Image
+      - name: Build Docker Image
         run: |
           docker build -t yt-sentiment-api:latest .
 
-      - name:  Test Container Health Endpoint
+      - name: Test Container Health Endpoint
         run: |
           docker run -d -p 8000:8000 --name api-container yt-sentiment-api:latest
           sleep 5
           curl -f http://localhost:8000/health || (docker logs api-container && exit 1)
           docker stop api-container
 
-      - name:  Log in to Docker Hub (Optional Secret)
-        if: ${{ secrets.DOCKER_HUB_USERNAME != '' && secrets.DOCKER_HUB_TOKEN != '' }}
+      - name: Log in to Docker Hub
+        if: ${{ env.DOCKER_USER != '' && env.DOCKER_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name:  Push Image to Docker Hub (Optional Secret)
-        if: ${{ secrets.DOCKER_HUB_USERNAME != '' && secrets.DOCKER_HUB_TOKEN != '' }}
+      - name: Push Image to Docker Hub
+        if: ${{ env.DOCKER_USER != '' && env.DOCKER_TOKEN != '' }}
         uses: docker/build-push-action@v5
         with:
           context: .

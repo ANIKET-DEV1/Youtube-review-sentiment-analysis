@@ -1,6 +1,6 @@
-# YouTube Comment Sentiment Analysis (MLOps)
+# YouTube Comment Sentiment Analysis (MLOps System)
 
-An end-to-end MLOps system for scraping YouTube video comments, predicting sentiment (positive, negative, neutral), storing user feedback for retraining, serving predictions via a FastAPI REST API + Web UI, and executing continuous integration and deployment (CI/CD) with GitHub Actions.
+> 📘 **FOR EVALUATORS / FACULTY**: Please see the comprehensive **[PROJECT_GUIDE.md](file:///c:/Users/ANIKET%20GUPTA/OneDrive/Desktop/PS-MLops/yt-sentiment-mlops/PROJECT_GUIDE.md)** for a complete single-file explanation of the project flow, architectural choices, Docker containerization, active learning feedback loop, CI/CD pipeline, and defense Q&A.
 
 ---
 
@@ -8,6 +8,7 @@ An end-to-end MLOps system for scraping YouTube video comments, predicting senti
 
 ```text
 yt-sentiment-mlops/
+├── PROJECT_GUIDE.md        # 📘 Comprehensive single-file project defense & architecture manual
 ├── .github/
 │   └── workflows/
 │       └── cicd.yml         # GitHub Actions CI/CD pipeline (Retraining, Eval, Test, Docker Build)
@@ -15,13 +16,13 @@ yt-sentiment-mlops/
 │   ├── main.py              # FastAPI application & API endpoints (/review, /predict, /feedback)
 │   ├── scraper.py           # Multi-tier YouTube comment scraper (top 20-25 comments)
 │   ├── model_wrapper.py     # Sentiment prediction model loader & batch aggregator
-│   ├── feedback.db          # SQLite database storing user feedback for model retraining
+│   ├── feedback.db          # SQLite database storing user feedback for active learning
 │   └── static/              # Web UI static assets
 │       ├── index.html       # Web dashboard template
 │       ├── style.css        # Glassmorphism dark UI styling
 │       └── script.js        # Dynamic API client & chart rendering
 ├── dataset/
-│   └── youtube_comments_sentiment_10000.csv   # Training dataset (10k comments)
+│   └── youtube_comments_sentiment_10000.csv   # Baseline training dataset (10k comments)
 ├── ml/
 │   ├── train.py             # Active learning retraining script (Dataset + Feedback DB)
 │   ├── evaluate.py          # Benchmark model evaluation & accuracy gate
