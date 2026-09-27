@@ -39,7 +39,7 @@ jobs:
 
       - name: Run Unit and API Tests
         run: |
-          pytest -v
+          python -m pytest -v
 
       - name: Upload Trained Model Artifact
         uses: actions/upload-artifact@v4

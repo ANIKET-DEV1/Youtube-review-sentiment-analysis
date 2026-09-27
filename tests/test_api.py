@@ -1,6 +1,6 @@
 from unittest.mock import patch
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app, scraper
 from app.scraper import YouTubeScraper
 
 client = TestClient(app)
@@ -36,7 +36,7 @@ def test_feedback_endpoint():
     assert response.status_code == 200
     assert response.json()["status"] == "success"
 
-@patch.object(YouTubeScraper, 'fetch_comments')
+@patch.object(scraper, 'fetch_comments')
 def test_review_endpoint(mock_fetch):
     mock_fetch.return_value = {
         "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -62,8 +62,8 @@ def test_review_endpoint(mock_fetch):
     assert data["sentiment_analysis"]["total_comments"] == 3
 
 def test_scraper_video_id_extraction():
-    scraper = YouTubeScraper()
-    assert scraper.extract_video_id("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "dQw4w9WgXcQ"
-    assert scraper.extract_video_id("https://youtu.be/dQw4w9WgXcQ") == "dQw4w9WgXcQ"
-    assert scraper.extract_video_id("https://www.youtube.com/shorts/dQw4w9WgXcQ") == "dQw4w9WgXcQ"
-    assert scraper.extract_video_id("dQw4w9WgXcQ") == "dQw4w9WgXcQ"
+    s = YouTubeScraper()
+    assert s.extract_video_id("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "dQw4w9WgXcQ"
+    assert s.extract_video_id("https://youtu.be/dQw4w9WgXcQ") == "dQw4w9WgXcQ"
+    assert s.extract_video_id("https://www.youtube.com/shorts/dQw4w9WgXcQ") == "dQw4w9WgXcQ"
+    assert s.extract_video_id("dQw4w9WgXcQ") == "dQw4w9WgXcQ"
