@@ -96,3 +96,4 @@ pipeline {
             sh 'docker rm -f api-test-container 2>/dev/null || true'
         }
     }
+}
