@@ -63,7 +63,6 @@ class ModelWrapper:
             k: round((v / total) * 100, 2) for k, v in counts.items()
         }
 
-        # Determine overall sentiment
         dominant = max(counts, key=counts.get)
 
         return {
