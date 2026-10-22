@@ -107,9 +107,6 @@ pipeline {
         }
 
         stage('Deploy') {
-            when {
-                branch 'main'
-            }
             steps {
                 sh '''
                     docker rm -f ${APP_CONTAINER} 2>/dev/null || true
