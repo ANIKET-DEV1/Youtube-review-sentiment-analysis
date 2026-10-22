@@ -1,9 +1,25 @@
 pipeline {
     agent any
 
+    // Auto-trigger: check GitHub every 2 minutes and build if there is a new commit.
+    // For instant triggers, replace with: githubPush()  (needs a GitHub webhook + public URL)
+    triggers {
+        pollSCM('H/2 * * * *')
+    }
+
+    options {
+        timeout(time: 45, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
+    }
+
     environment {
         PYTHONUNBUFFERED = '1'
         PYTHONPATH = '.'
+        IMAGE_NAME = 'yt-sentiment-app'
+        TEST_CONTAINER = 'api-test-container'
+        APP_CONTAINER = 'yt-sentiment-app'
+        APP_PORT = '8000'
     }
 
     stages {
@@ -18,9 +34,9 @@ pipeline {
                 sh '''
                     python3 -m venv .venv
                     . .venv/bin/activate
-                    pip install --upgrade pip
+                    pip install --default-timeout=120 --retries 10 --upgrade pip
                     if [ -f requirements.txt ]; then
-                        pip install -r requirements.txt
+                        pip install --default-timeout=120 --retries 10 -r requirements.txt
                     fi
                 '''
             }
@@ -59,29 +75,60 @@ pipeline {
             }
         }
 
-        stage('Build & Test Docker Container') {
+        stage('Build Docker Image') {
+            steps {
+                // Retry handles flaky network during base image pull / pip install
+                retry(3) {
+                    sh '''
+                        docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest .
+                    '''
+                }
+            }
+        }
+
+        stage('Test Container') {
             steps {
                 sh '''
-                    # Stop previous container if still alive
-                    docker rm -f api-test-container 2>/dev/null || true
+                    docker rm -f ${TEST_CONTAINER} 2>/dev/null || true
 
-                    # Build image from root Dockerfile
-                    docker build -t yt-sentiment-app:latest .
+                    docker run -d --name ${TEST_CONTAINER} ${IMAGE_NAME}:${BUILD_NUMBER}
 
-                    # Run container locally
-                    docker run -d --name api-test-container yt-sentiment-app:latest
+                    CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${TEST_CONTAINER})
 
-                    # Obtain internal IP to verify endpoint
-                    CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' api-test-container)
-
-                    timeout 30 bash -c "until curl -s -f http://${CONTAINER_IP}:8000/health; do sleep 2; done" || {
+                    timeout 60 bash -c "until curl -s -f http://${CONTAINER_IP}:${APP_PORT}/health; do sleep 2; done" || {
                         echo "Health check failed. Container output:"
-                        docker logs api-test-container
-                        docker rm -f api-test-container
+                        docker logs ${TEST_CONTAINER}
                         exit 1
                     }
 
-                    echo "Container health check passed."
+                    echo "Test container is healthy."
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh '''
+                    docker rm -f ${APP_CONTAINER} 2>/dev/null || true
+
+                    docker run -d --name ${APP_CONTAINER} \
+                        --restart unless-stopped \
+                        -p ${APP_PORT}:${APP_PORT} \
+                        ${IMAGE_NAME}:${BUILD_NUMBER}
+
+                    sleep 5
+                    DEPLOY_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${APP_CONTAINER})
+
+                    timeout 60 bash -c "until curl -s -f http://${DEPLOY_IP}:${APP_PORT}/health; do sleep 2; done" || {
+                        echo "Deployed container failed health check. Container output:"
+                        docker logs ${APP_CONTAINER}
+                        exit 1
+                    }
+
+                    echo "Deployed. App is live at http://localhost:${APP_PORT}"
                 '''
             }
         }
@@ -89,7 +136,16 @@ pipeline {
 
     post {
         always {
-            sh 'docker rm -f api-test-container 2>/dev/null || true'
+            // Remove only the test container; the deployed app keeps running
+            sh 'docker rm -f ${TEST_CONTAINER} 2>/dev/null || true'
+            // Clean up old dangling images to save disk space
+            sh 'docker image prune -f 2>/dev/null || true'
+        }
+        success {
+            echo "Pipeline succeeded. App deployed at http://localhost:8000"
+        }
+        failure {
+            echo 'Pipeline failed. Check the stage logs above.'
         }
     }
 }
