@@ -1,6 +1,6 @@
 # YouTube Comment Sentiment Analysis (MLOps System)
 
-> 📘 **FOR EVALUATORS / FACULTY**: Please see the comprehensive **[PROJECT_GUIDE.md](file:///c:/Users/ANIKET%20GUPTA/OneDrive/Desktop/PS-MLops/yt-sentiment-mlops/PROJECT_GUIDE.md)** for a complete single-file explanation of the project flow, architectural choices, Docker containerization, active learning feedback loop, CI/CD pipeline, and defense Q&A.
+> 📘 **FOR EVALUATORS / FACULTY**: Please see the comprehensive **[PROJECT_GUIDE.md](file:///c:/Users/ANIKET%20GUPTA/OneDrive/Desktop/PS-MLops/yt-sentiment-mlops/PROJECT_GUIDE.md)** for a complete single-file explanation of the project flow, architectural choices, Docker containerization, active learning feedback loop, CI/CD pipeline, and defense Q&A
 
 ---
 
